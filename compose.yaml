@@ -1,0 +1,9 @@
+services:
+  stockpilot:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: ${SQLSERVER_CONNECTION_STRING:?Set SQLSERVER_CONNECTION_STRING in .env before starting Compose}
+    restart: unless-stopped

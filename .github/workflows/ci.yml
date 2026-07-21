@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Backend tests
+        run: dotnet test backend/Tests/InventoryApi.Tests.csproj --configuration Release
+      - name: Backend dependency audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          for project in backend/InventoryApi.csproj backend/Tests/InventoryApi.Tests.csproj; do
+            dotnet list "$project" package --vulnerable --include-transitive --format json |
+              jq -e '[.projects[].frameworks[]? | ((.topLevelPackages // []) + (.transitivePackages // []))[] | select(((.vulnerabilities // []) | length) > 0)] | length == 0'
+          done
+      - name: Restore repository tools
+        run: dotnet tool restore
+      - name: Verify EF migration matches the model
+        run: dotnet tool run dotnet-ef migrations has-pending-model-changes --project backend/InventoryApi.csproj --startup-project backend/InventoryApi.csproj --configuration Release --no-build
+        env:
+          ConnectionStrings__DefaultConnection: Server=localhost;Database=StockPilotModelCheck;User Id=unused;Password=unused;TrustServerCertificate=True
+          SkipStartupDatabaseInitialization: true
+      - name: Backend production publish
+        run: dotnet publish backend/InventoryApi.csproj --configuration Release --no-restore
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+      - name: Frontend dependency audit
+        run: npm audit --audit-level=high
+        working-directory: frontend
+      - name: Frontend formatting
+        run: npm run format:check
+        working-directory: frontend
+      - name: Frontend lint
+        run: npm run lint
+        working-directory: frontend
+      - name: Frontend type check
+        run: npm run typecheck
+        working-directory: frontend
+      - name: Frontend E2E type check
+        run: npm run typecheck:e2e
+        working-directory: frontend
+      - name: Frontend tests
+        run: npm run test
+        working-directory: frontend
+      - name: Frontend production build
+        run: npm run build
+        working-directory: frontend
+      - name: Production container build
+        run: docker build -t stockpilot:${{ github.sha }} .
+
+  e2e:
+    runs-on: windows-2022
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+        working-directory: frontend
+      - name: Critical browser workflows
+        run: npm run test:e2e
+        working-directory: frontend
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 14

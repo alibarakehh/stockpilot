@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: stockpilot-inventory
+    runtime: docker
+    plan: starter
+    healthCheckPath: /api/health
+    autoDeployTrigger: checksPass
+    preDeployCommand: dotnet InventoryApi.dll --deploy
+    maxShutdownDelaySeconds: 30
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ASPNETCORE_FORWARDEDHEADERS_ENABLED
+        value: true
+      - key: Deployment__EnforceHttps
+        value: true
+      - key: Deployment__RequireCurrentMigration
+        value: true
+      - key: Database__ApplyMigrationsOnStartup
+        value: false
+      - key: SeedDemoData
+        value: false
+      - key: Bootstrap__AdminName
+        value: StockPilot Admin
+      - key: Bootstrap__WorkspaceName
+        value: StockPilot
+      - key: Bootstrap__WorkspaceSlug
+        value: stockpilot
+      - key: Bootstrap__CurrencyCode
+        value: USD
+      - key: Bootstrap__AdminEmail
+        sync: false
+      - key: Bootstrap__AdminPassword
+        sync: false
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
