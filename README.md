@@ -210,33 +210,19 @@ API failures use RFC 7807 Problem Details. In addition to human-readable `title`
 
 ## Deployment
 
-The simplest no-cost demonstration deployment uses a Render Free web service, an Azure SQL Database free-offer database, and a Gemini free-tier API key. `render.yaml` builds the combined React and ASP.NET application from the repository's Dockerfile. Because Render's separate pre-deploy command is unavailable on Free instances, the Blueprint explicitly enables formal EF migrations and the Admin bootstrap during application startup. The bootstrap transaction creates the initial workspace/Admin only when the database has no membership, so it remains idempotent across Render cold starts. Demo users remain disabled in production. Data Protection keys are persisted in SQL Server so authentication and antiforgery cookies remain valid across restarts.
+The live demonstration is available at **[stockpilot-alibarakeh.azurewebsites.net](https://stockpilot-alibarakeh.azurewebsites.net)**.
 
-1. Create an Azure SQL Database named `StockPilot` using the free database offer and choose the option that pauses at the monthly free limit.
-2. Copy its encrypted ADO.NET SQL-authentication connection string with `Encrypt=True` and `TrustServerCertificate=False`.
-3. In Render, create a Blueprint from this repository. The included Blueprint selects the Free web-service instance and Frankfurt region.
-4. Enter the four required secrets listed below when Render prompts for them.
-5. Copy the Render service's outbound IP ranges from **Connect > Outbound** and allow them in the Azure SQL server firewall, then redeploy.
-6. Open `/api/health` on the generated `onrender.com` URL and confirm that the database is available before signing in.
+It runs the compiled React and ASP.NET application on Azure App Service Free F1, backed by an Azure SQL Database free-offer database. The SQL free-limit behavior is auto-pause rather than billable overage, and the server firewall accepts only the web app's possible outbound addresses. Gemini Smart Intake calls Google only from the backend; its key is held in encrypted App Service settings and never sent to the browser. Formal EF migrations run during deployment startup, Data Protection keys persist in SQL Server, and temporary first-Admin bootstrap secrets were removed after provisioning.
 
-Required platform secrets:
+Production exposes `/api/health/live` for process liveness and `/api/health` for database/schema readiness. Free App Service and free Azure SQL can cold-start after inactivity and do not provide a production uptime SLA, so this deployment is intended for evaluation and portfolio demonstrations.
 
-- `ConnectionStrings__DefaultConnection`: encrypted managed SQL Server connection string
-- `Bootstrap__AdminEmail`: first production Admin email
-- `Bootstrap__AdminPassword`: first production Admin password meeting the configured Identity policy
-- `AI__SmartIntake__ApiKey`: Gemini API key stored only in Render's secret environment
-
-Production exposes `/api/health/live` for process liveness and `/api/health` for database/schema readiness. Remove the bootstrap email/password secrets after the first successful Admin sign-in; subsequent starts detect the existing membership and do not recreate or reset it. Render Free services sleep after a period without traffic, so the first request can take about a minute. This free configuration is appropriate for evaluation and portfolio demonstrations, not a production service with uptime guarantees.
-
-A public URL still requires managed SQL Server and a hosting account; no live URL is claimed yet.
-
-Docker is not required for local development. Render uses the repository's container definition remotely because it does not provide a native .NET runtime.
+`render.yaml` and the root `Dockerfile` remain a portable Render/Docker deployment alternative. Docker is not required for local development.
 
 ## Current limitations
 
 - The schema is workspace-scoped, but workspace provisioning and switching are not exposed in the UI.
 - Quantities are integers; fractional inventory is outside the current scope.
 - Replenishment guidance is deterministic and explainable, not trained demand forecasting.
-- Smart Intake is disabled until a server-side provider key is configured.
+- Smart Intake requires a server-side provider key and remains disabled in unconfigured environments.
 - Purchase orders, barcode scanning, batch/lot/serial tracking, and accounting integrations are not included.
 - Password reset, email verification, two-factor authentication, and enterprise SSO journeys are not exposed.
