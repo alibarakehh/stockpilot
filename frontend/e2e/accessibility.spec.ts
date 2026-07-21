@@ -73,9 +73,9 @@ test('authenticated core inventory pages have no automatically detectable WCAG v
   await expectNoWcagViolations(page)
 
   await page
-    .getByRole('link', { name: /Ergonomic Keyboard/ })
+    .getByRole('link', { name: /Apple iPhone 15 128GB/ })
     .first()
     .click()
-  await expect(page.getByRole('heading', { name: 'Ergonomic Keyboard' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Apple iPhone 15 128GB' })).toBeVisible()
   await expectNoWcagViolations(page)
 })

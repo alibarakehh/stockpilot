@@ -186,12 +186,38 @@ public static class SeedData
 
         var itemSeeds = new[]
         {
-            new ItemSeed("Ergonomic Keyboard", "TECH-1001", "Electronics", 24, 8, 79.99m, 119.99m, "A-01", "Northstar Tech"),
-            new ItemSeed("USB-C Dock", "TECH-1002", "Electronics", 4, 10, 119.00m, 169.00m, "A-02", "Northstar Tech"),
-            new ItemSeed("Recycled Notebook", "OFF-2001", "Office", 62, 15, 6.50m, 11.00m, "B-04", "Paper & Co."),
-            new ItemSeed("Standing Desk", "FUR-3001", "Furniture", 2, 4, 429.00m, 599.00m, "Floor 2", "ErgoWorks"),
-            new ItemSeed("Thermal Labels", "OPS-4001", "Operations", 0, 20, 18.75m, 29.00m, "C-07", "PackRight", ProcurementStatus.Ordered),
-            new ItemSeed("Legacy Monitor Arm", "FUR-3002", "Furniture", 0, 0, 54.00m, 70.00m, "Archive", "", ProcurementStatus.None, InventoryLifecycleStatus.Discontinued)
+            new ItemSeed(
+                "Ergonomic Keyboard", "TECH-1001",
+                "Apple iPhone 15 128GB", "APP-IP15-128", "Smartphones",
+                "128GB smartphone in black, prepared as a familiar retail demo product.",
+                24, 8, 699.00m, 799.00m, "Mobile-A1", "Apple Authorized Distributor"),
+            new ItemSeed(
+                "USB-C Dock", "TECH-1002",
+                "Apple iPad Air 11-inch 128GB", "APP-IPA11-128", "Tablets",
+                "11-inch tablet with Wi-Fi and 128GB storage.",
+                4, 10, 549.00m, 649.00m, "Tablet-A2", "Apple Authorized Distributor"),
+            new ItemSeed(
+                "Recycled Notebook", "OFF-2001",
+                "Apple AirTag", "APP-AIRTAG-1", "Accessories",
+                "Single Bluetooth item tracker for keys, bags, and equipment.",
+                62, 15, 22.00m, 29.00m, "Accessory-B1", "Apple Authorized Distributor"),
+            new ItemSeed(
+                "Standing Desk", "FUR-3001",
+                "Samsung 55-inch 4K Smart TV", "SAM-TV55-4K", "Televisions",
+                "55-inch 4K UHD smart television with Wi-Fi connectivity.",
+                2, 4, 399.00m, 549.00m, "TV-C1", "Samsung Distribution"),
+            new ItemSeed(
+                "Thermal Labels", "OPS-4001",
+                "Sony WH-1000XM5 Headphones", "SNY-WH1000XM5", "Audio",
+                "Wireless noise-cancelling over-ear headphones.",
+                0, 5, 329.00m, 399.00m, "Audio-D1", "Sony Distribution",
+                ProcurementStatus.Ordered),
+            new ItemSeed(
+                "Legacy Monitor Arm", "FUR-3002",
+                "Apple iPhone 11 64GB", "APP-IP11-64", "Smartphones",
+                "Discontinued 64GB smartphone retained to demonstrate lifecycle history.",
+                0, 0, 299.00m, 399.00m, "Archive", "Apple Authorized Distributor",
+                ProcurementStatus.None, InventoryLifecycleStatus.Discontinued)
         };
         var categories = await db.Categories
             .Where(category => category.WorkspaceId == DemoWorkspaceId)
@@ -211,20 +237,23 @@ public static class SeedData
         }
         await db.SaveChangesAsync(cancellationToken);
 
-        if (!await db.InventoryItems.AnyAsync(
-                item => item.WorkspaceId == DemoWorkspaceId,
-                cancellationToken))
+        var existingItems = await db.InventoryItems
+            .IgnoreQueryFilters()
+            .Where(item => item.WorkspaceId == DemoWorkspaceId)
+            .ToListAsync(cancellationToken);
+        if (existingItems.Count == 0)
         {
             foreach (var seed in itemSeeds)
             {
                 var category = categories[seed.Category.ToUpperInvariant()];
-                db.InventoryItems.Add(new InventoryItem
+                var item = new InventoryItem
                 {
                     WorkspaceId = DemoWorkspaceId,
                     CategoryId = category.Id,
                     Name = seed.Name,
                     Sku = seed.Sku,
                     NormalizedSku = seed.Sku,
+                    Description = seed.Description,
                     Quantity = seed.Quantity,
                     ReorderLevel = seed.ReorderLevel,
                     PurchasePrice = seed.PurchasePrice,
@@ -235,32 +264,60 @@ public static class SeedData
                     LifecycleStatus = seed.LifecycleStatus,
                     CreatedByUserId = AdminUserId,
                     UpdatedByUserId = AdminUserId
-                });
+                };
+                db.InventoryItems.Add(item);
+                if (item.Quantity > 0)
+                {
+                    db.InventoryMovements.Add(new InventoryMovement
+                    {
+                        WorkspaceId = DemoWorkspaceId,
+                        InventoryItemId = item.Id,
+                        RequestId = Guid.NewGuid(),
+                        Type = MovementType.OpeningBalance,
+                        Change = item.Quantity,
+                        PreviousQuantity = 0,
+                        NewQuantity = item.Quantity,
+                        Reason = "Demo catalog opening balance",
+                        PerformedByUserId = AdminUserId,
+                        PerformedByName = "StockPilot setup"
+                    });
+                }
             }
-            await db.SaveChangesAsync(cancellationToken);
         }
-
-        if (!await db.InventoryMovements.AnyAsync(
-                movement => movement.WorkspaceId == DemoWorkspaceId,
-                cancellationToken))
+        else
         {
-            var items = await db.InventoryItems
-                .Where(item => item.WorkspaceId == DemoWorkspaceId && item.Quantity > 0)
-                .ToListAsync(cancellationToken);
-            foreach (var item in items)
+            foreach (var seed in itemSeeds)
             {
-                db.InventoryMovements.Add(new InventoryMovement
+                if (existingItems.Any(item => item.NormalizedSku == seed.Sku)) continue;
+                var item = existingItems.SingleOrDefault(candidate =>
+                    candidate.NormalizedSku == seed.LegacySku &&
+                    candidate.Name == seed.LegacyName);
+                if (item is null) continue;
+
+                var category = categories[seed.Category.ToUpperInvariant()];
+                item.CategoryId = category.Id;
+                item.Name = seed.Name;
+                item.Sku = seed.Sku;
+                item.NormalizedSku = seed.Sku;
+                item.Description = seed.Description;
+                item.ReorderLevel = seed.ReorderLevel;
+                item.PurchasePrice = seed.PurchasePrice;
+                item.SellingPrice = seed.SellingPrice;
+                item.Location = seed.Location;
+                item.Supplier = seed.Supplier;
+                item.ProcurementStatus = seed.ProcurementStatus;
+                item.LifecycleStatus = seed.LifecycleStatus;
+                item.UpdatedByUserId = AdminUserId;
+                item.UpdatedAtUtc = DateTime.UtcNow;
+                item.Version++;
+                db.AuditEvents.Add(new AuditEvent
                 {
                     WorkspaceId = DemoWorkspaceId,
-                    InventoryItemId = item.Id,
-                    RequestId = Guid.NewGuid(),
-                    Type = MovementType.OpeningBalance,
-                    Change = item.Quantity,
-                    PreviousQuantity = 0,
-                    NewQuantity = item.Quantity,
-                    Reason = "Seeded opening balance",
-                    PerformedByUserId = AdminUserId,
-                    PerformedByName = "StockPilot setup"
+                    EntityType = nameof(InventoryItem),
+                    EntityId = item.Id,
+                    Action = "DemoCatalogUpdated",
+                    ActorUserId = AdminUserId,
+                    ActorName = "StockPilot setup"
                 });
             }
         }
@@ -310,9 +367,12 @@ public static class SeedData
     }
 
     private sealed record ItemSeed(
+        string LegacyName,
+        string LegacySku,
         string Name,
         string Sku,
         string Category,
+        string Description,
         int Quantity,
         int ReorderLevel,
         decimal PurchasePrice,

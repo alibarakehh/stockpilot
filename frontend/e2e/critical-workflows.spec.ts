@@ -80,18 +80,18 @@ test('Viewer is denied inventory-management and team controls', async ({ page })
 
 test('stock adjustment updates the balance and attributable activity', async ({ page }) => {
   await login(page, 'Manager')
-  await openItem(page, 'Ergonomic Keyboard')
+  await openItem(page, 'Apple iPhone 15 128GB')
 
   await recordReceipt(page, 3, 'E2E receipt PO-7001')
 
   await expect(page.getByText('27', { exact: true }).first()).toBeVisible()
-  await expect(page.getByText('Received Ergonomic Keyboard')).toBeVisible()
+  await expect(page.getByText('Received Apple iPhone 15 128GB')).toBeVisible()
   await expect(page.getByText(/E2E receipt PO-7001.*Inventory Manager.*24.*27/)).toBeVisible()
 })
 
 test('derived status honors the reorder boundary and operational priority', async ({ page }) => {
   await login(page, 'Manager')
-  await openItem(page, 'USB-C Dock')
+  await openItem(page, 'Apple iPad Air 11-inch 128GB')
   await expectStatus(page, 'Low stock')
 
   await recordReceipt(page, 6, 'E2E boundary receipt')
@@ -102,10 +102,10 @@ test('derived status honors the reorder boundary and operational priority', asyn
   await expect(page.getByText('11', { exact: true }).first()).toBeVisible()
   await expectStatus(page, 'In stock')
 
-  await openItem(page, 'Thermal Labels')
+  await openItem(page, 'Sony WH-1000XM5 Headphones')
   await expectStatus(page, 'Ordered')
 
-  await openItem(page, 'Legacy Monitor Arm')
+  await openItem(page, 'Apple iPhone 11 64GB')
   await expectStatus(page, 'Discontinued')
   await expect(page.getByRole('button', { name: 'Update stock' })).toHaveCount(0)
 })
