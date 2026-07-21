@@ -212,9 +212,14 @@ function ItemActions({
 
 function InventorySkeleton() {
   return (
-    <div className="inventory-skeleton" aria-live="polite" aria-label="Loading inventory">
+    <div
+      className="inventory-skeleton"
+      role="status"
+      aria-live="polite"
+      aria-label="Loading inventory"
+    >
       {[1, 2, 3, 4].map((row) => (
-        <span key={row} />
+        <span key={row} aria-hidden="true" />
       ))}
     </div>
   )

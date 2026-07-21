@@ -1,13 +1,15 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Page, type Route } from '@playwright/test'
 
 const wcagTags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 
-async function expectNoWcagViolations(page: Page) {
-  await page.waitForLoadState('networkidle')
-  await expect(
-    page.locator('.session-loading, .activity-loading, .inventory-skeleton'),
-  ).toHaveCount(0)
+async function expectNoWcagViolations(page: Page, waitForSettledUi = true) {
+  if (waitForSettledUi) {
+    await page.waitForLoadState('networkidle')
+    await expect(
+      page.locator('.session-loading, .activity-loading, .inventory-skeleton'),
+    ).toHaveCount(0)
+  }
   await page.evaluate(async () => document.fonts.ready)
 
   const result = await new AxeBuilder({ page }).withTags(wcagTags).analyze()
@@ -33,6 +35,31 @@ test('public login has no automatically detectable WCAG A or AA violations', asy
   await page.goto('/login')
   await expect(page.getByRole('heading', { name: 'Sign in to your workspace' })).toBeVisible()
   await expectNoWcagViolations(page)
+})
+
+test('inventory loading state has valid accessible status semantics', async ({ page }) => {
+  await loginAsManager(page)
+
+  const inventoryUrl = '**/api/inventory?*'
+  let releaseInventory: () => void = () => {}
+  const inventoryReleased = new Promise<void>((resolve) => {
+    releaseInventory = resolve
+  })
+  const holdInventory = async (route: Route) => {
+    await inventoryReleased
+    await route.continue()
+  }
+  await page.route(inventoryUrl, holdInventory)
+
+  try {
+    await page.getByRole('link', { name: 'Inventory', exact: true }).click()
+    await expect(page.getByRole('status', { name: 'Loading inventory' })).toBeVisible()
+    await expectNoWcagViolations(page, false)
+  } finally {
+    releaseInventory()
+    await expect(page.getByRole('status', { name: 'Loading inventory' })).toBeHidden()
+    await page.unroute(inventoryUrl, holdInventory)
+  }
 })
 
 test('authenticated core inventory pages have no automatically detectable WCAG violations', async ({
