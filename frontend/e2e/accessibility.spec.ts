@@ -4,6 +4,12 @@ import { expect, test, type Page } from '@playwright/test'
 const wcagTags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 
 async function expectNoWcagViolations(page: Page) {
+  await page.waitForLoadState('networkidle')
+  await expect(
+    page.locator('.session-loading, .activity-loading, .inventory-skeleton'),
+  ).toHaveCount(0)
+  await page.evaluate(async () => document.fonts.ready)
+
   const result = await new AxeBuilder({ page }).withTags(wcagTags).analyze()
   const violations = result.violations.map((violation) => ({
     id: violation.id,

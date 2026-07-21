@@ -7,7 +7,7 @@ RUN npm run build
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS api-build
 WORKDIR /source
-COPY Directory.Build.props ./
+COPY Directory.Build.props .editorconfig ./
 COPY backend/InventoryApi.csproj backend/
 RUN dotnet restore backend/InventoryApi.csproj
 COPY backend/ backend/
