@@ -99,15 +99,24 @@ builder.Services.AddHttpClient<OpenAiInventoryDraftProvider>((services, client) 
     var options = services.GetRequiredService<Microsoft.Extensions.Options.IOptions<AiSmartIntakeOptions>>().Value;
     client.Timeout = TimeSpan.FromSeconds(Math.Clamp(options.TimeoutSeconds, 5, 60));
 });
+builder.Services.AddHttpClient<GeminiInventoryDraftProvider>((services, client) =>
+{
+    var options = services.GetRequiredService<Microsoft.Extensions.Options.IOptions<AiSmartIntakeOptions>>().Value;
+    client.Timeout = TimeSpan.FromSeconds(Math.Clamp(options.TimeoutSeconds, 5, 60));
+});
 builder.Services.AddScoped<DisabledAiInventoryDraftProvider>();
 builder.Services.AddScoped<IAiInventoryDraftProvider>(services =>
 {
     var options = services.GetRequiredService<Microsoft.Extensions.Options.IOptions<AiSmartIntakeOptions>>().Value;
-    return options.Enabled
-        && options.Provider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase)
-        && !string.IsNullOrWhiteSpace(options.ApiKey)
-        ? services.GetRequiredService<OpenAiInventoryDraftProvider>()
-        : services.GetRequiredService<DisabledAiInventoryDraftProvider>();
+    if (!options.Enabled || string.IsNullOrWhiteSpace(options.ApiKey))
+        return services.GetRequiredService<DisabledAiInventoryDraftProvider>();
+
+    if (options.Provider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase))
+        return services.GetRequiredService<OpenAiInventoryDraftProvider>();
+    if (options.Provider.Equals("Gemini", StringComparison.OrdinalIgnoreCase))
+        return services.GetRequiredService<GeminiInventoryDraftProvider>();
+
+    return services.GetRequiredService<DisabledAiInventoryDraftProvider>();
 });
 builder.Services.AddScoped<IAiInventoryDraftService, AiInventoryDraftService>();
 builder.Services.AddScoped<ApiAntiforgeryFilter>();
@@ -300,7 +309,11 @@ if (args.Contains("--bootstrap-admin", StringComparer.OrdinalIgnoreCase))
     return;
 }
 if (!builder.Configuration.GetValue("SkipStartupDatabaseInitialization", false))
+{
     await SeedData.InitializeAsync(app.Services);
+    if (builder.Configuration.GetValue("Bootstrap:AdminOnStartup", false))
+        await SeedData.BootstrapAdminAsync(app.Services);
+}
 await app.RunAsync();
 
 static async Task<IResult> DatabaseHealthAsync(

@@ -102,15 +102,18 @@ Authentication cookies are created by the API and never exposed to JavaScript. C
 
 ## Optional Smart Intake configuration
 
-Smart Intake is disabled by default, so the complete manual inventory workflow works without an AI account or API key. To enable it for local development, set the server-side variables in the API terminal before starting the backend:
+Smart Intake is disabled by default, so the complete manual inventory workflow works without an AI account or API key. Gemini Flash-Lite is the recommended provider for a no-cost demonstration. To enable it for local development, set the server-side variables in the API terminal before starting the backend:
 
 ```powershell
 $env:AI__SmartIntake__Enabled = "true"
-$env:AI__SmartIntake__ApiKey = "YOUR_OPENAI_API_KEY"
+$env:AI__SmartIntake__Provider = "Gemini"
+$env:AI__SmartIntake__Model = "gemini-3.5-flash-lite"
+$env:AI__SmartIntake__Endpoint = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+$env:AI__SmartIntake__ApiKey = "YOUR_GEMINI_API_KEY"
 dotnet run --project backend --urls http://localhost:5000
 ```
 
-The default provider uses the OpenAI Responses API and the configured `gpt-5.6-sol` model. `AI__SmartIntake__Model`, `AI__SmartIntake__Endpoint`, and `AI__SmartIntake__TimeoutSeconds` can be overridden without changing source. Never place a real API key in `appsettings.json`, `.env`, Git, browser code, or deployment files; use environment variables or the hosting platform's secret store.
+The OpenAI Responses API remains supported by selecting provider `OpenAI`, model `gpt-5.6-sol`, and endpoint `https://api.openai.com/v1/responses`. `AI__SmartIntake__Model`, `AI__SmartIntake__Endpoint`, and `AI__SmartIntake__TimeoutSeconds` can be overridden without changing source. Never place a real provider key in `appsettings.json`, `.env`, Git, browser code, or deployment files; use environment variables or the hosting platform's secret store.
 
 Only Admins and Managers can request drafts. Input is bounded, rate limited, sent by the backend, constrained to a strict schema, and validated again after deserialization. Provider output only fills the ordinary item form: a person must review or edit the highlighted suggestions and explicitly select **Add item** before anything is persisted. If the provider is disabled or unavailable, the original description and manual workflow remain available.
 
@@ -207,15 +210,23 @@ API failures use RFC 7807 Problem Details. In addition to human-readable `title`
 
 ## Deployment
 
-`render.yaml` builds the combined application and requires a reachable SQL Server connection plus first-deployment Admin secrets. Its pre-deploy command applies formal EF migrations and transactionally creates the initial workspace/Admin only when the database has no membership. Demo users and automatic startup migrations are disabled in production. Data Protection keys are persisted in SQL Server so authentication and antiforgery cookies remain valid across restarts and application instances.
+The simplest no-cost demonstration deployment uses a Render Free web service, an Azure SQL Database free-offer database, and a Gemini free-tier API key. `render.yaml` builds the combined React and ASP.NET application from the repository's Dockerfile. Because Render's separate pre-deploy command is unavailable on Free instances, the Blueprint explicitly enables formal EF migrations and the Admin bootstrap during application startup. The bootstrap transaction creates the initial workspace/Admin only when the database has no membership, so it remains idempotent across Render cold starts. Demo users remain disabled in production. Data Protection keys are persisted in SQL Server so authentication and antiforgery cookies remain valid across restarts.
+
+1. Create an Azure SQL Database named `StockPilot` using the free database offer and choose the option that pauses at the monthly free limit.
+2. Copy its encrypted ADO.NET SQL-authentication connection string with `Encrypt=True` and `TrustServerCertificate=False`.
+3. In Render, create a Blueprint from this repository. The included Blueprint selects the Free web-service instance and Frankfurt region.
+4. Enter the four required secrets listed below when Render prompts for them.
+5. Copy the Render service's outbound IP ranges from **Connect > Outbound** and allow them in the Azure SQL server firewall, then redeploy.
+6. Open `/api/health` on the generated `onrender.com` URL and confirm that the database is available before signing in.
 
 Required platform secrets:
 
 - `ConnectionStrings__DefaultConnection`: encrypted managed SQL Server connection string
 - `Bootstrap__AdminEmail`: first production Admin email
 - `Bootstrap__AdminPassword`: first production Admin password meeting the configured Identity policy
+- `AI__SmartIntake__ApiKey`: Gemini API key stored only in Render's secret environment
 
-Production exposes `/api/health/live` for process liveness and `/api/health` for database/schema readiness. Enable managed SQL backups, restore testing, capacity alerts, and web health alerts before launch. Remove the bootstrap email/password secrets after the first successful Admin sign-in; subsequent deploys detect the existing membership and do not recreate or reset it.
+Production exposes `/api/health/live` for process liveness and `/api/health` for database/schema readiness. Remove the bootstrap email/password secrets after the first successful Admin sign-in; subsequent starts detect the existing membership and do not recreate or reset it. Render Free services sleep after a period without traffic, so the first request can take about a minute. This free configuration is appropriate for evaluation and portfolio demonstrations, not a production service with uptime guarantees.
 
 A public URL still requires managed SQL Server and a hosting account; no live URL is claimed yet.
 

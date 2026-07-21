@@ -5,10 +5,10 @@ using Microsoft.Extensions.Options;
 
 namespace InventoryApi.Services;
 
-public sealed partial class OpenAiInventoryDraftProvider(
+public sealed partial class GeminiInventoryDraftProvider(
     HttpClient httpClient,
     IOptions<AiSmartIntakeOptions> options,
-    ILogger<OpenAiInventoryDraftProvider> logger)
+    ILogger<GeminiInventoryDraftProvider> logger)
     : IAiInventoryDraftProvider
 {
     private const int MaximumResponseBytes = 1_048_576;
@@ -16,7 +16,7 @@ public sealed partial class OpenAiInventoryDraftProvider(
     private readonly AiSmartIntakeOptions _options = options.Value;
 
     public bool IsAvailable => true;
-    public string ProviderName => "OpenAI";
+    public string ProviderName => "Gemini";
     public string? UnavailableReason => null;
 
     public async Task<AiInventoryDraftCandidate> GenerateAsync(
@@ -81,13 +81,20 @@ public sealed partial class OpenAiInventoryDraftProvider(
     private object BuildRequest(string description) => new
     {
         model = _options.Model,
-        instructions = AiInventoryDraftSchema.SystemInstruction,
-        input = $"<inventory_description>\n{description}\n</inventory_description>",
-        text = new
+        messages = new object[]
         {
-            format = new
+            new { role = "system", content = AiInventoryDraftSchema.SystemInstruction },
+            new
             {
-                type = "json_schema",
+                role = "user",
+                content = $"<inventory_description>\n{description}\n</inventory_description>"
+            }
+        },
+        response_format = new
+        {
+            type = "json_schema",
+            json_schema = new
+            {
                 name = "inventory_draft",
                 strict = true,
                 schema = AiInventoryDraftSchema.Build()
@@ -97,27 +104,16 @@ public sealed partial class OpenAiInventoryDraftProvider(
 
     private static string ExtractOutputText(JsonElement root)
     {
-        if (root.TryGetProperty("output_text", out var directOutput)
-            && directOutput.ValueKind == JsonValueKind.String)
-            return directOutput.GetString()!;
+        if (!root.TryGetProperty("choices", out var choices)
+            || choices.ValueKind != JsonValueKind.Array
+            || choices.GetArrayLength() == 0)
+            throw new InvalidAiDraftException("The AI provider did not return a structured draft.");
 
-        if (root.TryGetProperty("output", out var output) && output.ValueKind == JsonValueKind.Array)
-        {
-            foreach (var item in output.EnumerateArray())
-            {
-                if (!item.TryGetProperty("content", out var content)
-                    || content.ValueKind != JsonValueKind.Array)
-                    continue;
-                foreach (var part in content.EnumerateArray())
-                {
-                    if (part.TryGetProperty("type", out var type)
-                        && type.GetString() == "output_text"
-                        && part.TryGetProperty("text", out var text)
-                        && text.ValueKind == JsonValueKind.String)
-                        return text.GetString()!;
-                }
-            }
-        }
+        var firstChoice = choices[0];
+        if (firstChoice.TryGetProperty("message", out var message)
+            && message.TryGetProperty("content", out var content)
+            && content.ValueKind == JsonValueKind.String)
+            return content.GetString()!;
 
         throw new InvalidAiDraftException("The AI provider did not return a structured draft.");
     }
@@ -144,8 +140,8 @@ public sealed partial class OpenAiInventoryDraftProvider(
     }
 
     [LoggerMessage(
-        EventId = 20,
+        EventId = 21,
         Level = LogLevel.Warning,
-        Message = "AI inventory draft provider returned HTTP {StatusCode}")]
+        Message = "Gemini inventory draft provider returned HTTP {StatusCode}")]
     private static partial void LogProviderFailure(ILogger logger, int statusCode);
 }

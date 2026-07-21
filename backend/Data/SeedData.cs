@@ -1,6 +1,8 @@
+using System.Data;
 using InventoryApi.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace InventoryApi.Data;
 
@@ -24,8 +26,23 @@ public static class SeedData
         IServiceProvider services,
         CancellationToken cancellationToken = default)
     {
+        await using var strategyScope = services.CreateAsyncScope();
+        var strategyDb = strategyScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var strategy = strategyDb.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(
+            token => BootstrapAdminAttemptAsync(services, token),
+            cancellationToken);
+    }
+
+    private static async Task BootstrapAdminAttemptAsync(
+        IServiceProvider services,
+        CancellationToken cancellationToken)
+    {
         await using var scope = services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await using var transaction = await db.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable,
+            cancellationToken);
         if (await db.WorkspaceMembers.AsNoTracking().AnyAsync(cancellationToken)) return;
 
         var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
@@ -62,7 +79,6 @@ public static class SeedData
         if (currencyCode.Length != 3 || !currencyCode.All(char.IsAsciiLetterUpper))
             throw new InvalidOperationException("Bootstrap:CurrencyCode must contain three letters.");
 
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         var workspace = new Workspace
         {
             Name = workspaceName,

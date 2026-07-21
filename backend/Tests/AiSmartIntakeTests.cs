@@ -206,6 +206,44 @@ public sealed class AiSmartIntakeTests : IClassFixture<StockPilotFactory>
             provider.GenerateAsync("Untrusted description", CancellationToken.None));
     }
 
+    [Fact]
+    public async Task Gemini_adapter_requests_strict_schema_and_parses_output()
+    {
+        var output = JsonSerializer.Serialize(ValidCandidate, JsonOptions);
+        var responseBody = JsonSerializer.Serialize(new
+        {
+            choices = new[]
+            {
+                new { message = new { content = output } }
+            }
+        });
+        var handler = new RecordingHandler(responseBody);
+        var options = Options.Create(new AiSmartIntakeOptions
+        {
+            Enabled = true,
+            Provider = "Gemini",
+            ApiKey = "test-only-key",
+            Model = "test-gemini-model",
+            Endpoint = "https://example.test/openai/chat/completions"
+        });
+        var provider = new GeminiInventoryDraftProvider(
+            new HttpClient(handler),
+            options,
+            NullLogger<GeminiInventoryDraftProvider>.Instance);
+
+        var candidate = await provider.GenerateAsync("Untrusted description", CancellationToken.None);
+
+        Assert.Equal(ValidCandidate, candidate);
+        Assert.NotNull(handler.RequestBody);
+        using var request = JsonDocument.Parse(handler.RequestBody);
+        Assert.Equal("test-gemini-model", request.RootElement.GetProperty("model").GetString());
+        var format = request.RootElement.GetProperty("response_format");
+        Assert.Equal("json_schema", format.GetProperty("type").GetString());
+        var jsonSchema = format.GetProperty("json_schema");
+        Assert.True(jsonSchema.GetProperty("strict").GetBoolean());
+        Assert.False(jsonSchema.GetProperty("schema").GetProperty("additionalProperties").GetBoolean());
+    }
+
     private WebApplicationFactory<Program> WithProvider(IAiInventoryDraftProvider provider) =>
         _factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
         {
