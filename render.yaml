@@ -2,6 +2,7 @@ services:
   - type: web
     name: stockpilot-inventory
     runtime: docker
+    region: frankfurt
     plan: starter
     healthCheckPath: /api/health
     autoDeployTrigger: checksPass
