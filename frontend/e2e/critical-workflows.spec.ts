@@ -1,11 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-
-async function login(page: Page, role: 'Manager' | 'Viewer') {
-  await page.goto('/login')
-  await page.getByRole('button', { name: role, exact: true }).click()
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click()
-  await expect(page).toHaveURL(/\/dashboard$/)
-}
+import { loginAs } from './authentication'
 
 async function openInventory(page: Page) {
   await page.getByRole('link', { name: 'Inventory', exact: true }).click()
@@ -36,7 +30,7 @@ async function recordReceipt(page: Page, quantity: number, reason: string) {
 }
 
 test('Manager creates an inventory item through the real application', async ({ page }) => {
-  await login(page, 'Manager')
+  await loginAs(page, 'Manager')
   await openInventory(page)
   await page.getByRole('button', { name: 'Add item' }).click()
 
@@ -64,7 +58,7 @@ test('Manager creates an inventory item through the real application', async ({ 
 })
 
 test('Viewer is denied inventory-management and team controls', async ({ page }) => {
-  await login(page, 'Viewer')
+  await loginAs(page, 'Viewer')
   await openInventory(page)
 
   await expect(page.getByRole('button', { name: 'Add item' })).toHaveCount(0)
@@ -79,7 +73,7 @@ test('Viewer is denied inventory-management and team controls', async ({ page })
 })
 
 test('stock adjustment updates the balance and attributable activity', async ({ page }) => {
-  await login(page, 'Manager')
+  await loginAs(page, 'Manager')
   await openItem(page, 'Apple iPhone 15 128GB')
 
   await recordReceipt(page, 3, 'E2E receipt PO-7001')
@@ -90,7 +84,7 @@ test('stock adjustment updates the balance and attributable activity', async ({ 
 })
 
 test('derived status honors the reorder boundary and operational priority', async ({ page }) => {
-  await login(page, 'Manager')
+  await loginAs(page, 'Manager')
   await openItem(page, 'Apple iPad Air 11-inch 128GB')
   await expectStatus(page, 'Low stock')
 
@@ -152,7 +146,7 @@ test('AI draft remains preview-only until edited and explicitly saved', async ({
     }),
   )
 
-  await login(page, 'Manager')
+  await loginAs(page, 'Manager')
   await openInventory(page)
   await page.getByRole('button', { name: 'AI Smart Entry' }).click()
   await page

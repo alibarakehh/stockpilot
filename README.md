@@ -75,6 +75,7 @@ SqlLocalDB start MSSQLLocalDB
 Start the API:
 
 ```powershell
+$env:SeedDemoPassword = "CHOOSE_A_PRIVATE_LOCAL_PASSWORD"
 dotnet run --project backend --urls http://localhost:5000
 ```
 
@@ -90,7 +91,7 @@ npm run dev
 
 Open <http://localhost:5173>. No Docker commands or manual SQL scripts are needed.
 
-The three seeded demonstration accounts use `Welcome123!`:
+The three optional local demonstration accounts use the private password supplied through `SeedDemoPassword`. No demo password is committed or displayed by the application:
 
 | Role | Email |
 |---|---|

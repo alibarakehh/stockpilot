@@ -1,5 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ShieldCheck } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
@@ -10,26 +9,16 @@ interface LoginProps {
   onAuthenticated: (auth: AuthResponse) => void
 }
 
-const demoPassword = 'Welcome123!'
-const demoAccounts = [
-  { label: 'Admin', email: 'admin@stockpilot.local' },
-  { label: 'Manager', email: 'manager@stockpilot.local' },
-  { label: 'Viewer', email: 'viewer@stockpilot.local' },
-]
-
 export function Login({ onAuthenticated }: LoginProps) {
   const {
     formState: { errors, isSubmitting },
     handleSubmit,
     register,
     setError,
-    setValue,
-    watch,
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: demoAccounts[0].email, password: demoPassword },
+    defaultValues: { email: '', password: '' },
   })
-  const email = watch('email')
 
   const submit = handleSubmit(async ({ email: submittedEmail, password }) => {
     try {
@@ -41,11 +30,6 @@ export function Login({ onAuthenticated }: LoginProps) {
       })
     }
   })
-
-  function selectDemo(emailAddress: string) {
-    setValue('email', emailAddress, { shouldValidate: true })
-    setValue('password', demoPassword, { shouldValidate: true })
-  }
 
   return (
     <main className="login-page">
@@ -91,20 +75,7 @@ export function Login({ onAuthenticated }: LoginProps) {
           </div>
           <span className="eyebrow">WELCOME BACK</span>
           <h2>Sign in to your workspace</h2>
-          <p className="muted">Use one of the demo accounts or your team credentials.</p>
-
-          <div className="demo-switcher" aria-label="Demo accounts">
-            {demoAccounts.map((account) => (
-              <button
-                className={email === account.email ? 'active' : ''}
-                key={account.label}
-                type="button"
-                onClick={() => selectDemo(account.email)}
-              >
-                {account.label}
-              </button>
-            ))}
-          </div>
+          <p className="muted">Enter your team credentials to continue.</p>
 
           <label>
             Email address
@@ -136,9 +107,6 @@ export function Login({ onAuthenticated }: LoginProps) {
           <button className="button primary full" disabled={isSubmitting} type="submit">
             {isSubmitting ? 'Signing in…' : 'Sign in'}
           </button>
-          <p className="security-note">
-            <ShieldCheck aria-hidden="true" size={14} /> Demo password: <code>{demoPassword}</code>
-          </p>
         </form>
       </section>
     </main>

@@ -33,6 +33,8 @@ Reset-E2EDatabase
 $env:E2E_CONNECTION_STRING = $connectionString
 $env:ConnectionStrings__DefaultConnection = $connectionString
 $env:ASPNETCORE_ENVIRONMENT = 'Development'
+$env:E2E_DEMO_PASSWORD = "E2e!$([Guid]::NewGuid().ToString('N'))aA1"
+$env:SeedDemoPassword = $env:E2E_DEMO_PASSWORD
 
 & dotnet run --project $backendProject --configuration Release --no-launch-profile -- --migrate
 if ($LASTEXITCODE -ne 0) {

@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page, type Route } from '@playwright/test'
+import { loginAs } from './authentication'
 
 const wcagTags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 
@@ -25,10 +26,7 @@ async function expectNoWcagViolations(page: Page, waitForSettledUi = true) {
 }
 
 async function loginAsManager(page: Page) {
-  await page.goto('/login')
-  await page.getByRole('button', { name: 'Manager', exact: true }).click()
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click()
-  await expect(page).toHaveURL(/\/dashboard$/)
+  await loginAs(page, 'Manager')
 }
 
 test('public login has no automatically detectable WCAG A or AA violations', async ({ page }) => {

@@ -342,45 +342,6 @@ input:disabled {
 .login-card input {
   min-height: 47px;
 }
-.demo-switcher {
-  background: #e9ede8;
-  border-radius: 8px;
-  display: grid;
-  gap: 4px;
-  grid-template-columns: repeat(3, 1fr);
-  margin-bottom: 24px;
-  padding: 4px;
-}
-.demo-switcher button {
-  background: transparent;
-  border: 0;
-  border-radius: 6px;
-  color: #4f5a54;
-  font-size: 0.78rem;
-  padding: 8px;
-}
-.demo-switcher button.active {
-  background: white;
-  box-shadow: 0 1px 4px rgb(0 0 0 / 8%);
-  color: var(--ink);
-  font-weight: 600;
-}
-.security-note {
-  align-items: center;
-  color: #59635d;
-  display: flex;
-  font-size: 0.72rem;
-  gap: 5px;
-  justify-content: center;
-  margin: 15px 0 0;
-  text-align: center;
-}
-.security-note svg {
-  color: var(--green);
-}
-.security-note code {
-  color: #5d6862;
-}
 .mobile-brand {
   display: none;
 }

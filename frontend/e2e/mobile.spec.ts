@@ -1,13 +1,12 @@
 import { devices, expect, test } from '@playwright/test'
+import { loginAs } from './authentication'
 
 test.use({ ...devices['Pixel 5'] })
 
 test('mobile inventory uses cards, avoids horizontal overflow, and keeps primary controls tappable', async ({
   page,
 }) => {
-  await page.goto('/login')
-  await page.getByRole('button', { name: 'Manager', exact: true }).click()
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click()
+  await loginAs(page, 'Manager')
   await page.getByRole('link', { name: 'Inventory', exact: true }).click()
 
   await expect(page.locator('.inventory-cards')).toBeVisible()

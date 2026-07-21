@@ -1,9 +1,10 @@
 import { defineConfig, devices } from '@playwright/test'
 
 const connectionString = process.env.E2E_CONNECTION_STRING
+const demoPassword = process.env.E2E_DEMO_PASSWORD
 
-if (!connectionString) {
-  throw new Error('E2E_CONNECTION_STRING is missing. Run the suite with npm run test:e2e.')
+if (!connectionString || !demoPassword) {
+  throw new Error('E2E environment is missing. Run the suite with npm run test:e2e.')
 }
 
 export default defineConfig({
@@ -36,6 +37,7 @@ export default defineConfig({
         ...process.env,
         ASPNETCORE_ENVIRONMENT: 'Development',
         ConnectionStrings__DefaultConnection: connectionString,
+        SeedDemoPassword: demoPassword,
         Database__ApplyMigrationsOnStartup: 'false',
         Deployment__RequireCurrentMigration: 'true',
         AI__SmartIntake__Enabled: 'false',

@@ -123,13 +123,8 @@ public static class SeedData
         var demoPassword = configuration["SeedDemoPassword"];
         if (string.IsNullOrWhiteSpace(demoPassword))
         {
-            if (!environment.IsDevelopment())
-            {
-                throw new InvalidOperationException(
-                    "SeedDemoPassword must be configured when demo data is enabled outside development.");
-            }
-
-            demoPassword = "Welcome123!";
+            throw new InvalidOperationException(
+                $"SeedDemoPassword must be configured when demo data is enabled in {environment.EnvironmentName}.");
         }
 
         var workspace = await db.Workspaces.SingleOrDefaultAsync(
