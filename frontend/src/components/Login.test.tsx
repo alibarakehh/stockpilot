@@ -25,7 +25,7 @@ describe('Login', () => {
 
     await user.click(screen.getByRole('button', { name: /Manager/ }))
 
-    expect(screen.getByLabelText('Email address')).toHaveValue('manager.demo@stockpilot.app')
+    expect(screen.getByLabelText('Email address')).toHaveValue('manager@stockpilot.local')
     expect(screen.getByLabelText('Password')).toHaveFocus()
     expect(screen.getByLabelText('Password')).toHaveValue('')
     expect(screen.getByText('Create, edit, and update stock')).toBeVisible()

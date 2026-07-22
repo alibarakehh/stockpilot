@@ -27,6 +27,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Backend tests
         run: dotnet test backend/Tests/InventoryApi.Tests.csproj --configuration Release
+      - name: Backend formatting
+        run: dotnet format backend/InventoryApi.csproj --verify-no-changes --no-restore
       - name: Backend dependency audit
         shell: bash
         run: |

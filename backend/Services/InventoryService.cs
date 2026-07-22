@@ -585,23 +585,23 @@ public sealed class InventoryService(AppDbContext db) : IInventoryService
     private static IQueryable<InventoryItem> ApplyStatusFilter(
         IQueryable<InventoryItem> query,
         StockStatus status) => status switch
-    {
-        StockStatus.Discontinued => query.Where(item =>
-            item.LifecycleStatus == InventoryLifecycleStatus.Discontinued),
-        StockStatus.Ordered => query.Where(item =>
-            item.LifecycleStatus == InventoryLifecycleStatus.Active &&
-            item.ProcurementStatus == ProcurementStatus.Ordered),
-        StockStatus.OutOfStock => query.Where(item =>
-            item.LifecycleStatus == InventoryLifecycleStatus.Active &&
-            item.ProcurementStatus == ProcurementStatus.None && item.Quantity == 0),
-        StockStatus.LowStock => query.Where(item =>
-            item.LifecycleStatus == InventoryLifecycleStatus.Active &&
-            item.ProcurementStatus == ProcurementStatus.None &&
-            item.Quantity > 0 && item.Quantity <= item.ReorderLevel),
-        _ => query.Where(item =>
-            item.LifecycleStatus == InventoryLifecycleStatus.Active &&
-            item.ProcurementStatus == ProcurementStatus.None && item.Quantity > item.ReorderLevel)
-    };
+        {
+            StockStatus.Discontinued => query.Where(item =>
+                item.LifecycleStatus == InventoryLifecycleStatus.Discontinued),
+            StockStatus.Ordered => query.Where(item =>
+                item.LifecycleStatus == InventoryLifecycleStatus.Active &&
+                item.ProcurementStatus == ProcurementStatus.Ordered),
+            StockStatus.OutOfStock => query.Where(item =>
+                item.LifecycleStatus == InventoryLifecycleStatus.Active &&
+                item.ProcurementStatus == ProcurementStatus.None && item.Quantity == 0),
+            StockStatus.LowStock => query.Where(item =>
+                item.LifecycleStatus == InventoryLifecycleStatus.Active &&
+                item.ProcurementStatus == ProcurementStatus.None &&
+                item.Quantity > 0 && item.Quantity <= item.ReorderLevel),
+            _ => query.Where(item =>
+                item.LifecycleStatus == InventoryLifecycleStatus.Active &&
+                item.ProcurementStatus == ProcurementStatus.None && item.Quantity > item.ReorderLevel)
+        };
 
     private static string NormalizeSku(string sku) => sku.Trim().ToUpperInvariant();
     private static string NormalizeName(string name) => name.Trim().ToUpperInvariant();

@@ -56,7 +56,9 @@ async function getAntiforgeryToken(): Promise<string> {
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const method = (options.method ?? 'GET').toUpperCase()
   const headers = new Headers(options.headers)
-  headers.set('Content-Type', 'application/json')
+  if (options.body !== undefined && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json')
+  }
   if (!SAFE_METHODS.has(method)) headers.set('X-CSRF-TOKEN', await getAntiforgeryToken())
   const response = await fetch(`${API_URL}${path}`, {
     ...options,

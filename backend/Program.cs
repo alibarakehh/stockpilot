@@ -267,8 +267,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("Frontend");
-app.UseRateLimiter();
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 app.MapGet("/api/health/live", () => Results.Ok(new { status = "healthy", utc = DateTime.UtcNow }))
     .AllowAnonymous();

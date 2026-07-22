@@ -23,5 +23,6 @@ indent_size = 2
 trim_trailing_whitespace = false
 
 [backend/Data/Migrations/*.cs]
-# EF generates inline column arrays; generated migrations should not be hand-optimized.
+# EF migrations are generated artifacts and should not be hand-formatted or hand-optimized.
+generated_code = true
 dotnet_diagnostic.CA1861.severity = none
