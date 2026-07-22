@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
@@ -27,6 +28,10 @@ export function Login({ onAuthenticated }: LoginProps) {
   const selectedRole = presentationAccounts.find(
     (account) => account.email === watch('email').trim().toLowerCase(),
   )?.role
+
+  useEffect(() => {
+    void api.prepareSession().catch(() => undefined)
+  }, [])
 
   const submit = handleSubmit(async ({ email: submittedEmail, password }) => {
     try {

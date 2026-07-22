@@ -1,4 +1,4 @@
-import { ClipboardList, Eye, LockKeyhole, ShieldCheck } from 'lucide-react'
+import { LockKeyhole } from 'lucide-react'
 import type { UserRole } from '../types'
 import {
   presentationAccounts,
@@ -10,12 +10,6 @@ interface PresentationAccountPickerProps {
   onSelect: (account: PresentationAccount) => void
 }
 
-const roleIcons = {
-  Admin: ShieldCheck,
-  Manager: ClipboardList,
-  Viewer: Eye,
-} as const
-
 export function PresentationAccountPicker({
   selectedRole,
   onSelect,
@@ -24,11 +18,14 @@ export function PresentationAccountPicker({
     <section className="presentation-access" aria-labelledby="presentation-access-title">
       <div className="presentation-access-heading">
         <strong id="presentation-access-title">Presentation accounts</strong>
-        <span>Choose how you want to explore StockPilot.</span>
+        <span>Select a role</span>
       </div>
-      <div className="presentation-role-options">
+      <div
+        className="presentation-role-options"
+        role="group"
+        aria-labelledby="presentation-access-title"
+      >
         {presentationAccounts.map((account) => {
-          const Icon = roleIcons[account.role]
           const selected = selectedRole === account.role
           return (
             <button
@@ -38,19 +35,19 @@ export function PresentationAccountPicker({
               aria-pressed={selected}
               onClick={() => onSelect(account)}
             >
-              <Icon size={17} aria-hidden="true" />
-              <span>
-                <strong>{account.role}</strong>
-                <small>{account.summary}</small>
-              </span>
+              {account.role}
             </button>
           )
         })}
       </div>
+      <p className="presentation-role-summary" aria-live="polite">
+        {selectedRole
+          ? presentationAccounts.find((account) => account.role === selectedRole)?.summary
+          : 'Choose a role to fill its email, or enter your own team email below.'}
+      </p>
       <p className="presentation-password-note">
         <LockKeyhole size={14} aria-hidden="true" />
-        The role email is filled automatically. Enter the private password shared by the
-        administrator.
+        Enter the private password shared by the administrator.
       </p>
     </section>
   )

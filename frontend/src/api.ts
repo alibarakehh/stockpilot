@@ -18,6 +18,7 @@ import { UNAUTHORIZED_EVENT } from './features/auth/session'
 const API_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
 let antiforgeryToken: string | null = null
+let antiforgeryRequest: Promise<string> | null = null
 
 export class ApiError extends Error {
   constructor(
@@ -32,15 +33,24 @@ export class ApiError extends Error {
 
 async function getAntiforgeryToken(): Promise<string> {
   if (antiforgeryToken) return antiforgeryToken
+  if (!antiforgeryRequest) {
+    antiforgeryRequest = (async () => {
+      const response = await fetch(`${API_URL}/api/auth/antiforgery`, {
+        credentials: 'include',
+      })
+      if (!response.ok) throw new ApiError('Unable to establish a secure session.', response.status)
 
-  const response = await fetch(`${API_URL}/api/auth/antiforgery`, {
-    credentials: 'include',
-  })
-  if (!response.ok) throw new ApiError('Unable to establish a secure session.', response.status)
+      const body = (await response.json()) as { requestToken: string }
+      antiforgeryToken = body.requestToken
+      return body.requestToken
+    })()
+  }
 
-  const body = (await response.json()) as { requestToken: string }
-  antiforgeryToken = body.requestToken
-  return body.requestToken
+  try {
+    return await antiforgeryRequest
+  } finally {
+    antiforgeryRequest = null
+  }
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -84,6 +94,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
+  prepareSession: async () => {
+    await getAntiforgeryToken()
+  },
   login: async (email: string, password: string) => {
     const response = await request<AuthResponse>('/api/auth/login', {
       method: 'POST',

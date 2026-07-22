@@ -1,11 +1,19 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from '../api'
 import { Login } from './Login'
 
 describe('Login', () => {
+  beforeEach(() => {
+    vi.spyOn(api, 'prepareSession').mockResolvedValue()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('makes presentation roles discoverable without publishing a password', async () => {
     const user = userEvent.setup()
 
@@ -20,6 +28,7 @@ describe('Login', () => {
     expect(screen.getByLabelText('Email address')).toHaveValue('manager.demo@stockpilot.app')
     expect(screen.getByLabelText('Password')).toHaveFocus()
     expect(screen.getByLabelText('Password')).toHaveValue('')
+    expect(screen.getByText('Create, edit, and update stock')).toBeVisible()
     expect(screen.getByText(/private password shared by the administrator/i)).toBeVisible()
   })
 
