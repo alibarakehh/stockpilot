@@ -324,7 +324,7 @@ input:disabled {
   padding: 50px;
 }
 .login-card {
-  max-width: 420px;
+  max-width: 460px;
   width: 100%;
 }
 .login-card h2 {
@@ -341,6 +341,78 @@ input:disabled {
 }
 .login-card input {
   min-height: 47px;
+}
+.presentation-access {
+  background: #eef2ed;
+  border: 1px solid #d8e0d8;
+  border-radius: 10px;
+  margin-bottom: 22px;
+  padding: 14px;
+}
+.presentation-access-heading {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+.presentation-access-heading strong {
+  color: var(--ink);
+  font-size: 0.74rem;
+}
+.presentation-access-heading span {
+  color: var(--muted);
+  font-size: 0.66rem;
+}
+.presentation-role-options {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(3, 1fr);
+}
+.presentation-role {
+  align-items: flex-start;
+  background: white;
+  border: 1px solid #d7ded8;
+  border-radius: 8px;
+  color: #5c6861;
+  display: flex;
+  gap: 7px;
+  min-height: 69px;
+  padding: 10px;
+  text-align: left;
+}
+.presentation-role:hover {
+  border-color: #8ea99b;
+}
+.presentation-role.selected {
+  background: #e3efe7;
+  border-color: var(--green);
+  box-shadow: 0 0 0 1px var(--green);
+  color: var(--green);
+}
+.presentation-role span {
+  display: grid;
+  gap: 3px;
+}
+.presentation-role strong {
+  color: var(--ink);
+  font-size: 0.7rem;
+}
+.presentation-role small {
+  color: var(--muted);
+  font-size: 0.57rem;
+  line-height: 1.35;
+}
+.presentation-password-note {
+  align-items: flex-start;
+  color: #647068;
+  display: flex;
+  font-size: 0.62rem;
+  gap: 6px;
+  line-height: 1.45;
+  margin: 10px 1px 0;
+}
+.presentation-password-note svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
 }
 .mobile-brand {
   display: none;
@@ -1320,6 +1392,13 @@ tbody tr:hover {
   .login-panel {
     min-height: 100vh;
     padding: 28px;
+  }
+  .presentation-role-options {
+    grid-template-columns: 1fr;
+  }
+  .presentation-role {
+    align-items: center;
+    min-height: 54px;
   }
   .mobile-brand {
     align-items: center;

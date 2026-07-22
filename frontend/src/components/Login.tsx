@@ -2,8 +2,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
+import { presentationAccounts } from '../features/auth/presentationAccounts'
 import { loginSchema, type LoginFormValues } from '../features/auth/validation'
 import type { AuthResponse } from '../types'
+import { PresentationAccountPicker } from './PresentationAccountPicker'
 
 interface LoginProps {
   onAuthenticated: (auth: AuthResponse) => void
@@ -15,10 +17,16 @@ export function Login({ onAuthenticated }: LoginProps) {
     handleSubmit,
     register,
     setError,
+    setFocus,
+    setValue,
+    watch,
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   })
+  const selectedRole = presentationAccounts.find(
+    (account) => account.email === watch('email').trim().toLowerCase(),
+  )?.role
 
   const submit = handleSubmit(async ({ email: submittedEmail, password }) => {
     try {
@@ -76,6 +84,14 @@ export function Login({ onAuthenticated }: LoginProps) {
           <span className="eyebrow">WELCOME BACK</span>
           <h2>Sign in to your workspace</h2>
           <p className="muted">Enter your team credentials to continue.</p>
+
+          <PresentationAccountPicker
+            selectedRole={selectedRole}
+            onSelect={(account) => {
+              setValue('email', account.email, { shouldDirty: true, shouldValidate: true })
+              setFocus('password')
+            }}
+          />
 
           <label>
             Email address
