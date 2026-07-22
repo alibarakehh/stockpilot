@@ -33,7 +33,7 @@ StockPilot is an inventory-management application built with ASP.NET Core 8, Rea
 
 ### Secure workspace sign-in
 
-![StockPilot sign-in with empty credential fields and secure password controls](docs/screenshots/login.png)
+![StockPilot sign-in with selectable roles, empty credential fields, and secure password controls](docs/screenshots/login.png)
 
 ### Inventory operations dashboard
 

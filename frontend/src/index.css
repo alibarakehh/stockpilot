@@ -344,6 +344,69 @@ input:disabled {
 .login-card input {
   min-height: 47px;
 }
+.presentation-access {
+  margin-bottom: 20px;
+}
+.presentation-access-heading {
+  align-items: baseline;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 7px;
+}
+.presentation-access-heading strong {
+  color: var(--ink);
+  font-size: 0.72rem;
+}
+.presentation-access-heading span {
+  color: var(--muted);
+  font-size: 0.62rem;
+}
+.presentation-role-options {
+  background: #e9ede8;
+  border-radius: 9px;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 4px;
+}
+.presentation-role {
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  color: #53625a;
+  font-size: 0.72rem;
+  min-height: 38px;
+  padding: 8px 10px;
+}
+.presentation-role:hover {
+  background: rgb(255 255 255 / 55%);
+  color: var(--ink);
+}
+.presentation-role.selected {
+  background: white;
+  box-shadow: 0 1px 4px rgb(30 55 44 / 14%);
+  color: var(--ink);
+  font-weight: 650;
+}
+.presentation-role-summary {
+  color: #59675f;
+  font-size: 0.65rem;
+  line-height: 1.4;
+  margin: 8px 2px 0;
+  min-height: 18px;
+}
+.presentation-password-note {
+  align-items: center;
+  color: #647068;
+  display: flex;
+  font-size: 0.62rem;
+  gap: 6px;
+  line-height: 1.35;
+  margin: 4px 2px 0;
+}
+.presentation-password-note svg {
+  flex: 0 0 auto;
+}
 .password-field {
   display: block;
   position: relative;
@@ -369,19 +432,6 @@ input:disabled {
 .password-toggle:hover {
   background: #edf0ec;
   color: var(--ink);
-}
-.login-security-note {
-  align-items: flex-start;
-  color: #647068;
-  display: flex;
-  font-size: 0.68rem;
-  gap: 7px;
-  line-height: 1.45;
-  margin: -2px 0 18px;
-}
-.login-security-note svg {
-  flex: 0 0 auto;
-  margin-top: 1px;
 }
 .mobile-brand {
   display: none;

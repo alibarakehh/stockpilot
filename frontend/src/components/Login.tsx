@@ -1,11 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Eye, EyeOff, LockKeyhole } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
+import { presentationAccounts } from '../features/auth/presentationAccounts'
 import { loginSchema, type LoginFormValues } from '../features/auth/validation'
 import type { AuthResponse } from '../types'
+import { PresentationAccountPicker } from './PresentationAccountPicker'
 
 interface LoginProps {
   onAuthenticated: (auth: AuthResponse) => void
@@ -18,10 +20,16 @@ export function Login({ onAuthenticated }: LoginProps) {
     handleSubmit,
     register,
     setError,
+    setFocus,
+    setValue,
+    watch,
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   })
+  const selectedRole = presentationAccounts.find(
+    (account) => account.email === watch('email').trim().toLowerCase(),
+  )?.role
 
   useEffect(() => {
     void api.prepareSession().catch(() => undefined)
@@ -84,6 +92,14 @@ export function Login({ onAuthenticated }: LoginProps) {
           <h2>Sign in to your workspace</h2>
           <p className="muted">Enter your team credentials to continue.</p>
 
+          <PresentationAccountPicker
+            selectedRole={selectedRole}
+            onSelect={(account) => {
+              setValue('email', account.email, { shouldDirty: true, shouldValidate: true })
+              setFocus('password')
+            }}
+          />
+
           <div className="login-field">
             <label htmlFor="login-email">Email address</label>
             <input
@@ -128,10 +144,6 @@ export function Login({ onAuthenticated }: LoginProps) {
               <small className="field-error">{errors.password.message}</small>
             )}
           </div>
-          <p className="login-security-note">
-            <LockKeyhole aria-hidden="true" size={14} />
-            Fields always start empty. Use credentials provided by your workspace administrator.
-          </p>
           {errors.root?.server?.message && (
             <div className="form-error" role="alert">
               {errors.root.server.message}
