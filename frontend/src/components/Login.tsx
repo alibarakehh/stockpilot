@@ -1,33 +1,27 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
+import { Eye, EyeOff, LockKeyhole } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
-import { presentationAccounts } from '../features/auth/presentationAccounts'
 import { loginSchema, type LoginFormValues } from '../features/auth/validation'
 import type { AuthResponse } from '../types'
-import { PresentationAccountPicker } from './PresentationAccountPicker'
 
 interface LoginProps {
   onAuthenticated: (auth: AuthResponse) => void
 }
 
 export function Login({ onAuthenticated }: LoginProps) {
+  const [showPassword, setShowPassword] = useState(false)
   const {
     formState: { errors, isSubmitting },
     handleSubmit,
     register,
     setError,
-    setFocus,
-    setValue,
-    watch,
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   })
-  const selectedRole = presentationAccounts.find(
-    (account) => account.email === watch('email').trim().toLowerCase(),
-  )?.role
 
   useEffect(() => {
     void api.prepareSession().catch(() => undefined)
@@ -81,7 +75,7 @@ export function Login({ onAuthenticated }: LoginProps) {
       </section>
 
       <section className="login-panel">
-        <form className="login-card" noValidate onSubmit={submit}>
+        <form autoComplete="off" className="login-card" noValidate onSubmit={submit}>
           <div className="mobile-brand">
             <span className="brand-mark">S</span>
             <span>StockPilot</span>
@@ -90,36 +84,54 @@ export function Login({ onAuthenticated }: LoginProps) {
           <h2>Sign in to your workspace</h2>
           <p className="muted">Enter your team credentials to continue.</p>
 
-          <PresentationAccountPicker
-            selectedRole={selectedRole}
-            onSelect={(account) => {
-              setValue('email', account.email, { shouldDirty: true, shouldValidate: true })
-              setFocus('password')
-            }}
-          />
-
-          <label>
-            Email address
+          <div className="login-field">
+            <label htmlFor="login-email">Email address</label>
             <input
               {...register('email')}
+              id="login-email"
               aria-invalid={Boolean(errors.email)}
-              autoComplete="email"
+              autoCapitalize="none"
+              autoComplete="off"
+              inputMode="email"
+              placeholder="name@company.com"
+              spellCheck={false}
               type="email"
             />
             {errors.email?.message && <small className="field-error">{errors.email.message}</small>}
-          </label>
-          <label>
-            Password
-            <input
-              {...register('password')}
-              aria-invalid={Boolean(errors.password)}
-              autoComplete="current-password"
-              type="password"
-            />
+          </div>
+          <div className="login-field">
+            <label htmlFor="login-password">Password</label>
+            <span className="password-field">
+              <input
+                {...register('password')}
+                id="login-password"
+                aria-invalid={Boolean(errors.password)}
+                autoComplete="off"
+                placeholder="Enter your password"
+                type={showPassword ? 'text' : 'password'}
+              />
+              <button
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-pressed={showPassword}
+                className="password-toggle"
+                onClick={() => setShowPassword((visible) => !visible)}
+                type="button"
+              >
+                {showPassword ? (
+                  <EyeOff aria-hidden="true" size={17} />
+                ) : (
+                  <Eye aria-hidden="true" size={17} />
+                )}
+              </button>
+            </span>
             {errors.password?.message && (
               <small className="field-error">{errors.password.message}</small>
             )}
-          </label>
+          </div>
+          <p className="login-security-note">
+            <LockKeyhole aria-hidden="true" size={14} />
+            Fields always start empty. Use credentials provided by your workspace administrator.
+          </p>
           {errors.root?.server?.message && (
             <div className="form-error" role="alert">
               {errors.root.server.message}

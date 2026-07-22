@@ -14,7 +14,7 @@ describe('Login', () => {
     vi.restoreAllMocks()
   })
 
-  it('makes presentation roles discoverable without publishing a password', async () => {
+  it('starts empty, shows helpful placeholders, and lets the user reveal their password', async () => {
     const user = userEvent.setup()
 
     render(
@@ -23,13 +23,24 @@ describe('Login', () => {
       </MemoryRouter>,
     )
 
-    await user.click(screen.getByRole('button', { name: /Manager/ }))
-
-    expect(screen.getByLabelText('Email address')).toHaveValue('manager@stockpilot.local')
-    expect(screen.getByLabelText('Password')).toHaveFocus()
+    expect(screen.getByLabelText('Email address')).toHaveValue('')
+    expect(screen.getByLabelText('Email address')).toHaveAttribute(
+      'placeholder',
+      'name@company.com',
+    )
     expect(screen.getByLabelText('Password')).toHaveValue('')
-    expect(screen.getByText('Create, edit, and update stock')).toBeVisible()
-    expect(screen.getByText(/private password shared by the administrator/i)).toBeVisible()
+    expect(screen.getByLabelText('Password')).toHaveAttribute('placeholder', 'Enter your password')
+    expect(screen.queryByText('Presentation accounts')).not.toBeInTheDocument()
+    expect(screen.getByText(/fields always start empty/i)).toBeVisible()
+
+    await user.type(screen.getByLabelText('Password'), 'Private123!')
+    await user.click(screen.getByRole('button', { name: 'Show password' }))
+
+    expect(screen.getByLabelText('Password')).toHaveAttribute('type', 'text')
+    expect(screen.getByRole('button', { name: 'Hide password' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
   })
 
   it('shows client-side validation before sending invalid credentials', async () => {

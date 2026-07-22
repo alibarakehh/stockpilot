@@ -11,7 +11,7 @@ const emails = {
 export async function loginAs(page: Page, role: keyof typeof emails) {
   await page.goto('/login')
   await page.getByLabel('Email address').fill(emails[role])
-  await page.getByLabel('Password').fill(demoPassword)
+  await page.getByLabel('Password', { exact: true }).fill(demoPassword)
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
   await expect(page).toHaveURL(/\/dashboard$/)
 }
