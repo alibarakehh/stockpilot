@@ -14,7 +14,7 @@ describe('Login', () => {
     vi.restoreAllMocks()
   })
 
-  it('starts empty and fills only the intentionally selected role email', async () => {
+  it('keeps credentials empty while letting users review role permissions', async () => {
     const user = userEvent.setup()
 
     render(
@@ -30,16 +30,16 @@ describe('Login', () => {
     )
     expect(screen.getByLabelText('Password')).toHaveValue('')
     expect(screen.getByLabelText('Password')).toHaveAttribute('placeholder', 'Enter your password')
-    expect(screen.getByText('Presentation accounts')).toBeVisible()
-    expect(screen.getByText(/select a role to fill only its email/i)).toBeVisible()
+    expect(screen.getByText('Access levels')).toBeVisible()
+    expect(screen.getByText(/type your own credentials/i)).toBeVisible()
 
     await user.click(screen.getByRole('button', { name: 'Manager' }))
 
-    expect(screen.getByLabelText('Email address')).toHaveValue('manager@stockpilot.local')
-    expect(screen.getByLabelText('Password')).toHaveFocus()
+    expect(screen.getByLabelText('Email address')).toHaveValue('')
+    expect(screen.getByLabelText('Email address')).toHaveFocus()
     expect(screen.getByLabelText('Password')).toHaveValue('')
     expect(screen.getByText('Create, edit, and update stock')).toBeVisible()
-    expect(screen.getByText(/passwords are never filled/i)).toBeVisible()
+    expect(screen.getByText(/credentials are never filled/i)).toBeVisible()
 
     await user.type(screen.getByLabelText('Password'), 'Private123!')
     await user.click(screen.getByRole('button', { name: 'Show password' }))

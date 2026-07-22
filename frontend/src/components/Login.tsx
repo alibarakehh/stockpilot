@@ -4,9 +4,8 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
-import { presentationAccounts } from '../features/auth/presentationAccounts'
 import { loginSchema, type LoginFormValues } from '../features/auth/validation'
-import type { AuthResponse } from '../types'
+import type { AuthResponse, UserRole } from '../types'
 import { PresentationAccountPicker } from './PresentationAccountPicker'
 
 interface LoginProps {
@@ -15,21 +14,17 @@ interface LoginProps {
 
 export function Login({ onAuthenticated }: LoginProps) {
   const [showPassword, setShowPassword] = useState(false)
+  const [selectedRole, setSelectedRole] = useState<UserRole>()
   const {
     formState: { errors, isSubmitting },
     handleSubmit,
     register,
     setError,
     setFocus,
-    setValue,
-    watch,
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   })
-  const selectedRole = presentationAccounts.find(
-    (account) => account.email === watch('email').trim().toLowerCase(),
-  )?.role
 
   useEffect(() => {
     void api.prepareSession().catch(() => undefined)
@@ -94,9 +89,9 @@ export function Login({ onAuthenticated }: LoginProps) {
 
           <PresentationAccountPicker
             selectedRole={selectedRole}
-            onSelect={(account) => {
-              setValue('email', account.email, { shouldDirty: true, shouldValidate: true })
-              setFocus('password')
+            onSelect={(role) => {
+              setSelectedRole(role.role)
+              setFocus('email')
             }}
           />
 
@@ -108,6 +103,8 @@ export function Login({ onAuthenticated }: LoginProps) {
               aria-invalid={Boolean(errors.email)}
               autoCapitalize="none"
               autoComplete="off"
+              data-1p-ignore="true"
+              data-lpignore="true"
               inputMode="email"
               placeholder="name@company.com"
               spellCheck={false}
@@ -122,7 +119,9 @@ export function Login({ onAuthenticated }: LoginProps) {
                 {...register('password')}
                 id="login-password"
                 aria-invalid={Boolean(errors.password)}
-                autoComplete="off"
+                autoComplete="new-password"
+                data-1p-ignore="true"
+                data-lpignore="true"
                 placeholder="Enter your password"
                 type={showPassword ? 'text' : 'password'}
               />
