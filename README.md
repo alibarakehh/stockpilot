@@ -162,9 +162,9 @@ npm run test:e2e:install # first run only
 npm run test:e2e
 ```
 
-The frontend check enforces formatting, zero-warning linting, application and E2E TypeScript, 26 unit/DOM tests, and a production build. The backend currently runs 52 tests and treats compiler and recommended analyzer warnings as errors.
+The frontend check enforces formatting, zero-warning linting, application and E2E TypeScript, the complete unit/DOM suite, and a production build. The backend test suite treats compiler and recommended analyzer warnings as errors.
 
-Eight Playwright workflows cover Manager creation, Viewer restrictions, stock adjustment and activity, status boundaries, AI draft review, automated WCAG A/AA checks, and mobile cards/overflow/touch targets. The E2E runner is Windows/LocalDB based and does not require Docker. It uses ports `5100` and `5175`, deletes only the explicitly named disposable `StockPilotE2E` database before and after the run, and never touches the normal `StockPilot` database. The AI browser scenario intercepts only the external extraction response; preview verification and the final explicit inventory save still use the real application API and SQL Server database.
+Playwright covers Manager creation, Viewer restrictions, Admin team-member removal, stock adjustment and activity, status boundaries, AI draft review, automated WCAG A/AA checks, and mobile cards/overflow/touch targets. The E2E runner is Windows/LocalDB based and does not require Docker. It uses ports `5100` and `5175`, deletes only the explicitly named disposable `StockPilotE2E` database before and after the run, and never touches the normal `StockPilot` database. The AI browser scenario intercepts only the external extraction response; preview verification and the final explicit inventory save still use the real application API and SQL Server database.
 
 GitHub Actions runs the backend/frontend/container pipeline on Ubuntu and the focused Chromium workflows on `windows-2022`, where SQL Server LocalDB is available, then uploads Playwright reports for diagnosis.
 
@@ -199,7 +199,10 @@ Smart Intake is a separate optional generative feature. It converts untrusted na
 | `GET` | `/api/ai/insights` | All roles |
 | `GET` | `/api/ai/inventory-draft/availability` | Admin, Manager |
 | `POST` | `/api/ai/inventory-draft` | Admin, Manager |
-| `GET`, `POST`, `PATCH` | `/api/users` | Admin |
+| `GET` | `/api/users` | Admin |
+| `POST` | `/api/users` | Admin |
+| `PATCH` | `/api/users/{id}/role` | Admin |
+| `DELETE` | `/api/users/{id}` | Admin |
 | `GET` | `/api/health` | Public |
 | `GET` | `/api/health/live` | Public |
 
@@ -217,7 +220,7 @@ It runs the compiled React and ASP.NET application on Azure App Service Free F1,
 
 Production exposes `/api/health/live` for process liveness and `/api/health` for database/schema readiness. Free App Service and free Azure SQL can cold-start after inactivity and do not provide a production uptime SLA, so this deployment is intended for evaluation and portfolio demonstrations.
 
-`render.yaml` and the root `Dockerfile` remain a portable Render/Docker deployment alternative. Docker is not required for local development.
+The root `Dockerfile` and `compose.yaml` provide a CI-validated portable container option. Docker is not required for local development or the Azure deployment.
 
 ## Current limitations
 
