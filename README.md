@@ -1,6 +1,12 @@
 # StockPilot Inventory Management
 
+[![CI](https://github.com/alibarakehh/stockpilot/actions/workflows/ci.yml/badge.svg)](https://github.com/alibarakehh/stockpilot/actions/workflows/ci.yml)
+
 StockPilot is an inventory-management application built with ASP.NET Core 8, React, TypeScript, EF Core, and SQL Server. It combines reliable stock-control workflows, explainable replenishment recommendations, and an optional review-before-save AI intake assistant.
+
+**Live demonstration:** [stockpilot-alibarakeh.azurewebsites.net/login](https://stockpilot-alibarakeh.azurewebsites.net/login)
+
+The login screen's Admin, Manager, and Viewer controls explain the available access levels only. They never insert credentials. Email and password fields always start empty, no live credentials are embedded in the frontend bundle, and evaluation credentials must be entered manually after being shared through a private channel.
 
 ## Features
 
@@ -47,15 +53,17 @@ StockPilot is an inventory-management application built with ASP.NET Core 8, Rea
 
 Permissions are enforced by the API; frontend visibility is only a usability aid.
 
-| Capability | Admin | Manager | Viewer |
-|---|:---:|:---:|:---:|
-| View inventory, activity, dashboard, and intelligence | Yes | Yes | Yes |
-| Search, filter, sort, and paginate | Yes | Yes | Yes |
-| Create items and edit metadata | Yes | Yes | No |
-| Receive, issue, return, damage, and correct stock | Yes | Yes | No |
-| Generate and review Smart Intake drafts | Yes | Yes | No |
-| Archive and restore inventory | Yes | No | No |
-| Manage team members and roles | Yes | No | No |
+Selecting a role on the login screen previews its capabilities but does not grant that role or populate either credential field. The authenticated account's database membership determines its actual permissions.
+
+| Capability                                            | Admin | Manager | Viewer |
+| ----------------------------------------------------- | :---: | :-----: | :----: |
+| View inventory, activity, dashboard, and intelligence |  Yes  |   Yes   |  Yes   |
+| Search, filter, sort, and paginate                    |  Yes  |   Yes   |  Yes   |
+| Create items and edit metadata                        |  Yes  |   Yes   |   No   |
+| Receive, issue, return, damage, and correct stock     |  Yes  |   Yes   |   No   |
+| Generate and review Smart Intake drafts               |  Yes  |   Yes   |   No   |
+| Archive and restore inventory                         |  Yes  |   No    |   No   |
+| Manage team members and roles                         |  Yes  |   No    |   No   |
 
 ## Simplest Windows setup
 
@@ -91,13 +99,13 @@ npm run dev
 
 Open <http://localhost:5173>. No Docker commands or manual SQL scripts are needed.
 
-The three optional local demonstration accounts use the private password supplied through `SeedDemoPassword`. No demo password is committed or displayed by the application:
+The three optional local demonstration accounts use the private password supplied through `SeedDemoPassword`. No demo password is committed or displayed by the application. Type the selected account email and private password manually; the role guide intentionally does not populate them:
 
-| Role | Email |
-|---|---|
-| Admin | `admin@stockpilot.local` |
+| Role    | Email                      |
+| ------- | -------------------------- |
+| Admin   | `admin@stockpilot.local`   |
 | Manager | `manager@stockpilot.local` |
-| Viewer | `viewer@stockpilot.local` |
+| Viewer  | `viewer@stockpilot.local`  |
 
 Authentication cookies are created by the API and never exposed to JavaScript. Change or disable the seeded accounts before public deployment.
 
@@ -180,31 +188,31 @@ Smart Intake is a separate optional generative feature. It converts untrusted na
 
 ## API summary
 
-| Method | Endpoint | Access |
-|---|---|---|
-| `POST` | `/api/auth/login` | Public |
-| `GET` | `/api/auth/antiforgery` | Public |
-| `GET` | `/api/auth/me` | Authenticated |
-| `POST` | `/api/auth/logout` | Authenticated |
-| `GET` | `/api/inventory` | All roles |
-| `GET` | `/api/inventory/categories` | All roles |
-| `GET` | `/api/inventory/summary` | All roles |
-| `GET` | `/api/inventory/movements` | All roles |
-| `GET` | `/api/inventory/archived` | Admin |
-| `POST` | `/api/inventory` | Admin, Manager |
-| `PUT` | `/api/inventory/{id}` | Admin, Manager |
-| `PATCH` | `/api/inventory/{id}/stock` | Admin, Manager |
-| `DELETE` | `/api/inventory/{id}` | Admin |
-| `POST` | `/api/inventory/{id}/restore` | Admin |
-| `GET` | `/api/ai/insights` | All roles |
-| `GET` | `/api/ai/inventory-draft/availability` | Admin, Manager |
-| `POST` | `/api/ai/inventory-draft` | Admin, Manager |
-| `GET` | `/api/users` | Admin |
-| `POST` | `/api/users` | Admin |
-| `PATCH` | `/api/users/{id}/role` | Admin |
-| `DELETE` | `/api/users/{id}` | Admin |
-| `GET` | `/api/health` | Public |
-| `GET` | `/api/health/live` | Public |
+| Method   | Endpoint                               | Access         |
+| -------- | -------------------------------------- | -------------- |
+| `POST`   | `/api/auth/login`                      | Public         |
+| `GET`    | `/api/auth/antiforgery`                | Public         |
+| `GET`    | `/api/auth/me`                         | Authenticated  |
+| `POST`   | `/api/auth/logout`                     | Authenticated  |
+| `GET`    | `/api/inventory`                       | All roles      |
+| `GET`    | `/api/inventory/categories`            | All roles      |
+| `GET`    | `/api/inventory/summary`               | All roles      |
+| `GET`    | `/api/inventory/movements`             | All roles      |
+| `GET`    | `/api/inventory/archived`              | Admin          |
+| `POST`   | `/api/inventory`                       | Admin, Manager |
+| `PUT`    | `/api/inventory/{id}`                  | Admin, Manager |
+| `PATCH`  | `/api/inventory/{id}/stock`            | Admin, Manager |
+| `DELETE` | `/api/inventory/{id}`                  | Admin          |
+| `POST`   | `/api/inventory/{id}/restore`          | Admin          |
+| `GET`    | `/api/ai/insights`                     | All roles      |
+| `GET`    | `/api/ai/inventory-draft/availability` | Admin, Manager |
+| `POST`   | `/api/ai/inventory-draft`              | Admin, Manager |
+| `GET`    | `/api/users`                           | Admin          |
+| `POST`   | `/api/users`                           | Admin          |
+| `PATCH`  | `/api/users/{id}/role`                 | Admin          |
+| `DELETE` | `/api/users/{id}`                      | Admin          |
+| `GET`    | `/api/health`                          | Public         |
+| `GET`    | `/api/health/live`                     | Public         |
 
 Inventory queries accept `search`, `category`, `supplier`, `location`, `minQuantity`, `maxQuantity`, `status`, `sortBy`, `descending`, `page`, and `pageSize`. Page size is bounded to 100. Supported sorts are updated time, name, SKU, category, quantity, purchase price, selling price, inventory value, location, and supplier.
 
