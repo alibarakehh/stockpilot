@@ -1,4 +1,6 @@
+using System.Data;
 using System.Security.Claims;
+using System.Text.Json;
 using InventoryApi.Contracts;
 using InventoryApi.Data;
 using InventoryApi.Infrastructure;
@@ -145,6 +147,81 @@ public sealed class UsersController(
             member.User.Name,
             member.User.Email ?? string.Empty,
             member.Role));
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        var workspaceId = CurrentWorkspaceId();
+        var currentUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        if (currentUserId == id)
+        {
+            return BadRequest(ApiProblems.Create(
+                HttpContext,
+                StatusCodes.Status400BadRequest,
+                "Your account cannot be removed",
+                ApiErrorCodes.SelfDelete,
+                "Ask another administrator to remove your account."));
+        }
+
+        var strategy = db.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync<IActionResult>(async () =>
+        {
+            await using var transaction = await db.Database.BeginTransactionAsync(
+                IsolationLevel.Serializable,
+                cancellationToken);
+            var member = await db.WorkspaceMembers
+                .Include(candidate => candidate.User)
+                .SingleOrDefaultAsync(
+                    candidate => candidate.WorkspaceId == workspaceId && candidate.UserId == id,
+                    cancellationToken);
+            if (member is null) return NotFound();
+
+            if (member.Role == AppRoles.Admin)
+            {
+                var administratorCount = await db.WorkspaceMembers.CountAsync(
+                    candidate => candidate.WorkspaceId == workspaceId &&
+                                 candidate.Role == AppRoles.Admin,
+                    cancellationToken);
+                if (administratorCount <= 1)
+                {
+                    return Conflict(ApiProblems.Create(
+                        HttpContext,
+                        StatusCodes.Status409Conflict,
+                        "An administrator is required",
+                        ApiErrorCodes.LastAdminDelete,
+                        "Promote another team member before removing the final administrator."));
+                }
+            }
+
+            var hasOtherMemberships = await db.WorkspaceMembers.AnyAsync(
+                candidate => candidate.UserId == id && candidate.WorkspaceId != workspaceId,
+                cancellationToken);
+            db.AuditEvents.Add(new AuditEvent
+            {
+                WorkspaceId = workspaceId,
+                EntityType = nameof(ApplicationUser),
+                EntityId = member.UserId,
+                Action = "TeamMemberRemoved",
+                ActorUserId = currentUserId,
+                ActorName = User.Identity?.Name ?? "Administrator",
+                DetailsJson = JsonSerializer.Serialize(new
+                {
+                    member.User.Name,
+                    member.User.Email,
+                    member.Role
+                })
+            });
+
+            if (hasOtherMemberships)
+                db.WorkspaceMembers.Remove(member);
+            else
+                db.Users.Remove(member.User);
+
+            await db.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return NoContent();
+        });
     }
 
     private Guid CurrentWorkspaceId() =>

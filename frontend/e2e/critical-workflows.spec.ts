@@ -72,6 +72,30 @@ test('Viewer is denied inventory-management and team controls', async ({ page })
   await expect(page.getByRole('heading', { name: 'Welcome back, Team' })).toBeVisible()
 })
 
+test('Administrator can add and remove a team member', async ({ page }) => {
+  const unique = Date.now()
+  const name = `E2E Remove ${unique}`
+  const email = `e2e-remove-${unique}@stockpilot.local`
+  await loginAs(page, 'Admin')
+  await page.getByRole('link', { name: 'Team', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Team members' })).toBeVisible()
+  await page.getByRole('button', { name: 'Add member' }).click()
+  await page.getByLabel('Name').fill(name)
+  await page.getByLabel('Email').fill(email)
+  await page.getByLabel('Temporary password').fill('Temporary123!')
+  await page.locator('form.inline-form select[name="role"]').selectOption('Viewer')
+  await page.getByRole('button', { name: 'Add member', exact: true }).click()
+  await expect(page.getByText(email, { exact: true })).toBeVisible()
+
+  await page.getByRole('button', { name: `Remove ${name}` }).click()
+  const confirmation = page.getByRole('alertdialog', { name: `Remove ${name}?` })
+  await expect(confirmation).toContainText('immediately lose access')
+  await confirmation.getByRole('button', { name: 'Remove member' }).click()
+
+  await expect(page.getByRole('status')).toHaveText(`${name} was removed from the team.`)
+  await expect(page.getByText(email, { exact: true })).toHaveCount(0)
+})
+
 test('stock adjustment updates the balance and attributable activity', async ({ page }) => {
   await loginAs(page, 'Manager')
   await openItem(page, 'Apple iPhone 15 128GB')

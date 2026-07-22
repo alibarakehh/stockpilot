@@ -1247,7 +1247,7 @@ tbody tr:hover {
   border-top: 1px solid var(--line);
   display: grid;
   gap: 13px;
-  grid-template-columns: 36px 1fr 140px 280px;
+  grid-template-columns: 36px 1fr 140px minmax(180px, 240px) 36px;
   padding: 18px 0;
 }
 .member:first-child {
@@ -1278,6 +1278,12 @@ tbody tr:hover {
   font-size: 0.7rem;
   padding: 7px 9px;
 }
+.member-delete {
+  color: var(--danger);
+}
+.member-delete:hover:not(:disabled) {
+  background: #f9e8e5;
+}
 
 @media (max-width: 1050px) {
   .stats-grid {
@@ -1297,7 +1303,7 @@ tbody tr:hover {
     align-self: stretch;
   }
   .member {
-    grid-template-columns: 36px 1fr 120px;
+    grid-template-columns: 36px 1fr 120px 36px;
   }
   .member p {
     display: none;
@@ -1464,7 +1470,7 @@ tbody tr:hover {
     grid-template-columns: 1fr;
   }
   .member {
-    grid-template-columns: 36px 1fr 100px;
+    grid-template-columns: 36px 1fr 100px 36px;
   }
 }
 

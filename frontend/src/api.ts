@@ -185,4 +185,5 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify({ role }),
     }),
+  deleteUser: (id: string) => request<void>(`/api/users/${id}`, { method: 'DELETE' }),
 }

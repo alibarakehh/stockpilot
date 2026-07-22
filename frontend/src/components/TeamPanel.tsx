@@ -1,11 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { UserPlus } from 'lucide-react'
+import { Trash2, UserPlus } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { api } from '../api'
 import type { User, UserRole } from '../types'
+import { ConfirmDialog } from './ConfirmDialog'
 
 const teamKey = ['team'] as const
 const memberSchema = z.object({
@@ -27,6 +28,7 @@ export function TeamPanel({ currentUser }: { currentUser: User }) {
   const users = useQuery({ queryKey: teamKey, queryFn: api.users })
   const [showForm, setShowForm] = useState(false)
   const [message, setMessage] = useState('')
+  const [memberToDelete, setMemberToDelete] = useState<User | null>(null)
   const form = useForm<MemberForm>({
     resolver: zodResolver(memberSchema),
     defaultValues: { name: '', email: '', password: '', role: 'Viewer' },
@@ -39,6 +41,12 @@ export function TeamPanel({ currentUser }: { currentUser: User }) {
   })
   const changeRole = useMutation({
     mutationFn: ({ id, role }: { id: string; role: UserRole }) => api.changeRole(id, role),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: teamKey })
+    },
+  })
+  const deleteUser = useMutation({
+    mutationFn: api.deleteUser,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: teamKey })
     },
@@ -121,10 +129,10 @@ export function TeamPanel({ currentUser }: { currentUser: User }) {
           )}
         </form>
       )}
-      {(users.error || changeRole.error) && (
+      {(users.error || changeRole.error || deleteUser.error) && (
         <div className="form-error" role="alert">
-          {(users.error ?? changeRole.error) instanceof Error
-            ? (users.error ?? changeRole.error)?.message
+          {(users.error ?? changeRole.error ?? deleteUser.error) instanceof Error
+            ? (users.error ?? changeRole.error ?? deleteUser.error)?.message
             : 'Could not update the team.'}
         </div>
       )}
@@ -153,7 +161,9 @@ export function TeamPanel({ currentUser }: { currentUser: User }) {
               <select
                 aria-label={`Role for ${user.name}`}
                 value={user.role}
-                disabled={user.id === currentUser.id || changeRole.isPending}
+                disabled={
+                  user.id === currentUser.id || changeRole.isPending || deleteUser.isPending
+                }
                 onChange={(event) =>
                   changeRole.mutate(
                     { id: user.id, role: event.target.value as UserRole },
@@ -166,9 +176,36 @@ export function TeamPanel({ currentUser }: { currentUser: User }) {
                 <option>Admin</option>
               </select>
               <p>{roleDescription(user.role)}</p>
+              {user.id === currentUser.id ? (
+                <span aria-hidden="true" />
+              ) : (
+                <button
+                  className="icon-button danger member-delete"
+                  type="button"
+                  aria-label={`Remove ${user.name}`}
+                  title={`Remove ${user.name}`}
+                  disabled={changeRole.isPending || deleteUser.isPending}
+                  onClick={() => setMemberToDelete(user)}
+                >
+                  <Trash2 size={15} />
+                </button>
+              )}
             </div>
           ))}
         </div>
+      )}
+      {memberToDelete && (
+        <ConfirmDialog
+          title={`Remove ${memberToDelete.name}?`}
+          message={`${memberToDelete.email} will immediately lose access to this workspace. This action cannot be undone.`}
+          confirmLabel="Remove member"
+          onCancel={() => setMemberToDelete(null)}
+          onConfirm={async () => {
+            await deleteUser.mutateAsync(memberToDelete.id)
+            setMemberToDelete(null)
+            flash(`${memberToDelete.name} was removed from the team.`)
+          }}
+        />
       )}
     </section>
   )

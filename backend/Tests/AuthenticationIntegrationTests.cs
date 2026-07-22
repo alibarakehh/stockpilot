@@ -112,6 +112,71 @@ public sealed class AuthenticationIntegrationTests : IClassFixture<StockPilotFac
     }
 
     [Fact]
+    public async Task Admin_can_remove_a_team_member_and_the_action_is_audited()
+    {
+        using var client = _factory.CreateClient();
+        var csrf = await LoginAsync(client, "admin@test.local");
+        var email = $"remove-{Guid.NewGuid():N}@test.local";
+        using var create = AuthorizedJson(
+            HttpMethod.Post,
+            "/api/users",
+            new CreateUserRequest
+            {
+                Name = "Temporary member",
+                Email = email,
+                Password = StockPilotFactory.Password,
+                Role = AppRoles.Viewer
+            },
+            csrf);
+        var created = await client.SendAsync(create);
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var member = await created.Content.ReadFromJsonAsync<UserResponse>();
+        Assert.NotNull(member);
+
+        using var remove = new HttpRequestMessage(HttpMethod.Delete, $"/api/users/{member.Id}");
+        remove.Headers.Add("X-CSRF-TOKEN", csrf);
+        var removed = await client.SendAsync(remove);
+
+        Assert.Equal(HttpStatusCode.NoContent, removed.StatusCode);
+        var members = await client.GetFromJsonAsync<List<UserResponse>>("/api/users");
+        Assert.DoesNotContain(members!, candidate => candidate.Id == member.Id);
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        Assert.True(await db.AuditEvents.AnyAsync(audit =>
+            audit.EntityId == member.Id && audit.Action == "TeamMemberRemoved"));
+    }
+
+    [Fact]
+    public async Task Admin_cannot_remove_their_own_account()
+    {
+        using var client = _factory.CreateClient();
+        var csrf = await LoginAsync(client, "admin@test.local");
+        var current = await client.GetFromJsonAsync<UserResponse>("/api/auth/me");
+        Assert.NotNull(current);
+        using var remove = new HttpRequestMessage(HttpMethod.Delete, $"/api/users/{current.Id}");
+        remove.Headers.Add("X-CSRF-TOKEN", csrf);
+
+        await AssertProblemAsync(
+            await client.SendAsync(remove),
+            HttpStatusCode.BadRequest,
+            "self_delete");
+    }
+
+    [Fact]
+    public async Task Manager_cannot_remove_a_team_member()
+    {
+        using var client = _factory.CreateClient();
+        var csrf = await LoginAsync(client, "manager@test.local");
+        using var remove = new HttpRequestMessage(HttpMethod.Delete, $"/api/users/{Guid.NewGuid()}");
+        remove.Headers.Add("X-CSRF-TOKEN", csrf);
+
+        await AssertProblemAsync(
+            await client.SendAsync(remove),
+            HttpStatusCode.Forbidden,
+            "permission_denied");
+    }
+
+    [Fact]
     public async Task Item_from_another_workspace_returns_404()
     {
         using var client = _factory.CreateClient();

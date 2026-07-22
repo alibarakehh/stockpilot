@@ -15,6 +15,8 @@ public static class ApiErrorCodes
     public const string InvalidRole = "invalid_role";
     public const string DuplicateUser = "duplicate_user";
     public const string SelfRoleChange = "self_role_change";
+    public const string SelfDelete = "self_delete";
+    public const string LastAdminDelete = "last_admin_delete";
     public const string MethodNotAllowed = "method_not_allowed";
     public const string RateLimitExceeded = "rate_limit_exceeded";
     public const string RequestTooLarge = "request_too_large";
